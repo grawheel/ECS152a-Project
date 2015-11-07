@@ -44,11 +44,10 @@ class server_queue:
 		     # Infinite loop for generating packets
 			yield env.timeout(random.expovariate(self.arrival_rate))
 			  # arrival time of one packet
-
 			self.packet_number += 1
 			  # packet id
 			arrival_time = env.now  
-			#print(self.num_pkt_total, "packet arrival")
+			print("packet arrival %d" % self.packet_number)
 			new_packet = Packet(self.packet_number,arrival_time)
 			if self.flag_processing == 0:
 				self.flag_processing = 1

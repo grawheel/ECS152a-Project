@@ -29,7 +29,7 @@ MU = 1
 """ Queue system  """		
 class server_queue:
         #initialize server
-	def __init__(self, env, B, arrival_rate, Packet_Delay, Server_Idle_Periods):
+	def __init__(self, env, B, arrival_rate, Packet_Delay):
 		self.server = simpy.Resource(env, capacity = 1)
 		self.buffer = simpy.Container(env, init=0, capacity=B)
 		self.buff_proc = env.process(self.monitor_buffer(env))
@@ -41,7 +41,6 @@ class server_queue:
 		self.start_idle_time = 0
 		self.arrival_rate = arrival_rate
 		self.Packet_Delay = Packet_Delay
-		self.Server_Idle_Periods = Server_Idle_Periods
 
         def monitor_buffer(self, env):
                 while True:
@@ -65,6 +64,26 @@ class server_queue:
 				self.flag_processing = 0
 				self.start_idle_time = env.now
 
+	def packets_arrival(self, env):
+		# packet arrivals 
+		
+		while True:
+		     # Infinite loop for generating packets
+			yield env.timeout(random.expovariate(self.arrival_rate))
+			  # arrival time of one packet
+			self.packet_number += 1
+			  # packet id
+			arrival_time = env.now  
+			print("packet arrival %d" % self.packet_number)
+			new_packet = Packet(self.packet_number,arrival_time)
+			if self.flag_processing == 0:
+				self.flag_processing = 1
+				idle_period = env.now - self.start_idle_time
+				self.Server_Idle_Periods.addNumber(idle_period)
+				#print("Idle period of length {0} ended".format(idle_period))
+			self.queue_len += 1
+			env.process(self.process_packet(env, new_packet))
+
 """ Packet class """			
 class Packet:
 	def __init__(self, ID, arrival_time):
@@ -87,5 +106,10 @@ def main():
             # run the sim until num.packets.in.buff == B
             # yield to packet drop process until transmit packet,
             # clearing buffer: |buffer| = B-1
+        	env = simpy.Environment()
+            Packet_Delay = StatObject()
+			router = server_queue(env, arrival_rate, Packet_Delay,)
+			env.process(router.packets_arrival(env))
+            #env.run(until=B)
             
 if __name__ == '__main__': main()

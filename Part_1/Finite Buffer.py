@@ -31,8 +31,6 @@ class server_queue:
         #initialize server
 	def __init__(self, env, Dropped_Packets, NonDropped_Packets, B, arrival_rate, Packet_Delay, Server_Idle_Periods):
 		self.server = simpy.Resource(env, capacity = 1)
-		#self.buffer = simpy.Container(env, init=0, capacity=B)
-		self.buff_proc = env.process(self.monitor_buffer(env))
 		self.env = env
 		self.queue_len = 0
 		self.buffer_max = B

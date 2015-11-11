@@ -93,9 +93,9 @@ def main():
     print("Simple queue system model:mu = {0}".format(MU))
     random.seed(RANDOM_SEED)
     for B in [10, 50]:
-        print ("----- B = "+str(B)+" ------")
-        print ("{0:<15} {1:<15} {2:<15} {3:<15}".format(
-                "ArrivalRate", "Dropped","NonDropped","ProbabilityDropped"))
+        print ("------ B = "+str(B)+" ------")
+        print ("{0:<15} {1:<15} {2:<15} {3:<15} {4:<15}".format(
+                "ArrivalRate", "Dropped","NonDropped","ProbabilityDropped","Theoretical Value"))
         for arrival_rate in [0.2, 0.4, 0.6, 0.8, 0.9, 0.99]:
             # run the sim until num.packets.in.buff == B
             # yield to packet drop process until transmit packet,
@@ -108,11 +108,18 @@ def main():
             router = server_queue(env, Dropped_Packets, NonDropped_Packets, B, arrival_rate, Packet_Delay, Server_Idle_Periods)
             env.process(router.packets_arrival(env))
             env.run(until=SIM_TIME)
-            print ("{0:<1.2f} {1:<10} {2:<15} {3:<15} {4:<1.5f}".format(
+            capacity = B+1
+            first = 1-arrival_rate
+            second = pow(arrival_rate,capacity)
+            final = first*second
+            print ("{0:<1.2f} {1:<10} {2:<15} {3:<15} {4:<1.7f} {5:<8} {6:<1.7f}".format(
                 float(arrival_rate),
                 "",
                 int(Dropped_Packets.count()),
                 int(NonDropped_Packets.count()),
-                round(Dropped_Packets.count()/float(Dropped_Packets.count()+NonDropped_Packets.count()),5)))
+                round(Dropped_Packets.count()/float(Dropped_Packets.count()+NonDropped_Packets.count()),5),
+                "",
+                final))
+
             
 if __name__ == '__main__': main()

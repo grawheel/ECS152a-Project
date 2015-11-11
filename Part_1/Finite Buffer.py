@@ -104,7 +104,7 @@ def main():
 	print("Simple queue system model:mu = {0}".format(MU))
 	print ("{0:<9} {1:<9} {2:<9}".format("Lambda", "B=10", "B=50"))
 	random.seed(RANDOM_SEED)
-	for B in [10, 50]
+	for B in [10, 50]:
         for arrival_rate in [0.2, 0.4, 0.6, 0.8, 0.9, 0.99]:
             # run the sim until num.packets.in.buff == B
             # yield to packet drop process until transmit packet,

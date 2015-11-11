@@ -19,6 +19,7 @@ RANDOM_SEED = 29
 SIM_TIME = 1000000
 #   To keep things simple, let mu = 1 pkt/sec
 MU = 1
+B = 10
 
 #Need to simulate and plot (or tabulate) the following:
 # 1) Determine packet loss probability Pd when:
@@ -29,7 +30,7 @@ MU = 1
 """ Queue system  """		
 class server_queue:
         #initialize server
-	def __init__(self, env, B, arrival_rate, Packet_Delay):
+	def __init__(self, env, B, arrival_rate, Packet_Delay, Server_Idle_Periods):
 		self.server = simpy.Resource(env, capacity = 1)
 		self.buffer = simpy.Container(env, init=0, capacity=B)
 		self.buff_proc = env.process(self.monitor_buffer(env))
@@ -41,6 +42,7 @@ class server_queue:
 		self.start_idle_time = 0
 		self.arrival_rate = arrival_rate
 		self.Packet_Delay = Packet_Delay
+		self.Server_Idle_Periods = Server_Idle_Periods
 
         def monitor_buffer(self, env):
                 while True:
@@ -74,7 +76,7 @@ class server_queue:
 			self.packet_number += 1
 			  # packet id
 			arrival_time = env.now  
-			print("packet arrival %d" % self.packet_number)
+			#print("packet arrival %d" % self.packet_number)
 			new_packet = Packet(self.packet_number,arrival_time)
 			if self.flag_processing == 0:
 				self.flag_processing = 1
@@ -86,8 +88,8 @@ class server_queue:
 
 """ Packet class """			
 class Packet:
-	def __init__(self, ID, arrival_time):
-		self.ID = ID
+	def __init__(self, identifier, arrival_time):
+		self.identifier = identifier
 		self.arrival_time = arrival_time
 
 class StatObject:
@@ -102,14 +104,18 @@ def main():
 	print("Simple queue system model:mu = {0}".format(MU))
 	print ("{0:<9} {1:<9} {2:<9}".format("Lambda", "B=10", "B=50"))
 	random.seed(RANDOM_SEED)
+
         for arrival_rate in [0.2, 0.4, 0.6, 0.8, 0.9, 0.99]:
             # run the sim until num.packets.in.buff == B
             # yield to packet drop process until transmit packet,
             # clearing buffer: |buffer| = B-1
         	env = simpy.Environment()
             Packet_Delay = StatObject()
-			router = server_queue(env, arrival_rate, Packet_Delay,)
+            Server_Idle_Periods = StatObject()
+			Dropped_Packets = StatObject()
+			NonDropped_Packets = StatObject()
+			router = server_queue(env, B, arrival_rate, Packet_Delay, Server_Idle_Periods)
 			env.process(router.packets_arrival(env))
-            #env.run(until=B)
+            env.run(until=SIM_TIME)
             
 if __name__ == '__main__': main()

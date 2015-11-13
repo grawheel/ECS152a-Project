@@ -14,7 +14,6 @@ import os
 #For true random:
 RANDOM_SEED = os.urandom(7)
 SIM_TIME = 1000000
-
 MU = 1
 
 """ Queue system  """       
@@ -43,7 +42,6 @@ class server_queue:
             yield env.timeout(random.expovariate(MU))
             latency = env.now - packet.arrival_time
             self.Packet_Delay.addNumber(latency)
-            #print("Packet number {0} with arrival time {1} latency {2}".format(packet.identifier, packet.arrival_time, latency))
             self.queue_len -= 1
             if self.queue_len == 0:
                 self.flag_processing = 0
@@ -61,13 +59,11 @@ class server_queue:
                 self.packet_number += 1
                   # packet id
                 arrival_time = env.now  
-                #print("packet arrival %d" % self.packet_number)
                 new_packet = Packet(self.packet_number,arrival_time)
                 if self.flag_processing == 0:
                     self.flag_processing = 1
                     idle_period = env.now - self.start_idle_time
                     self.Server_Idle_Periods.addNumber(idle_period)
-                    #print("Idle period of length {0} ended".format(idle_period))
                 self.queue_len += 1
                 env.process(self.process_packet(env, new_packet))
             else:
@@ -90,7 +86,7 @@ class StatObject:
 
         
 def main():
-    print("Simple queue system model:mu = {0}".format(MU))
+    print("Finite queue system model: mu = {0}".format(MU))
     random.seed(RANDOM_SEED)
     for B in [10, 50]:
         print ("------ B = "+str(B)+" ------")
@@ -109,9 +105,9 @@ def main():
             env.process(router.packets_arrival(env))
             env.run(until=SIM_TIME)
             capacity = B+1
-            first = 1-arrival_rate
-            second = pow(arrival_rate,capacity)
-            final = first*second
+            top = 1-(pow(arrival_rate/MU, capacity))
+            bottom = 1-(pow(arrival_rate/MU,capacity+1))
+            final = 1-(top/bottom)
             print ("{0:<1.2f} {1:<10} {2:<15} {3:<15} {4:<1.7f} {5:<8} {6:<1.7f}".format(
                 float(arrival_rate),
                 "",

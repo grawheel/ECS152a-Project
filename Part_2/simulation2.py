@@ -143,7 +143,7 @@ def main():
     global currentSlotGlobal, totalPacketsProcessed
     random.seed(RANDOM_SEED)
     
-    print("Binary Exponential Backoff Model with 10 Queues: ")
+    print("Binary Exponential Backoff Model with 10 Queues, for slot time of 1 and 10 hosts: ")
     for arrival_rate in [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]:
         print ("{0:<15} {1:<15} {2:<17} {3:<15} {4:<15}".format(
                 "Lambda", "TotalSlots","ProcessedPackets","Throughput","PacketSlotCollisions"))
@@ -164,7 +164,7 @@ def main():
                 int(router.totalCollisions)))
 
     print("")
-    print("Linear Backoff Model with 10 Queues: ")
+    print("Linear Backoff Model with 10 Queues, for slot time of 1 and 10 hosts: ")
     for arrival_rate in [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]:
         print ("{0:<15} {1:<15} {2:<17} {3:<15} {4:<15}".format(
                 "Lambda", "TotalSlots","ProcessedPackets","Throughput","PacketSlotCollisions"))

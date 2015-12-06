@@ -20,8 +20,8 @@ class server_queue:
         #self.L = 0 #The number of packets in the queue.
         self.N = 0 #The number of times the packet at the head of the queue has been retransmitted. When a new packet comes to
             #the head of the queue n is reset to 0.
-        self.slotNum = 0 #The slot number when the next transmission attempt will be made for the packet at the head of the queue.
-    
+        self.slotNum = 1 #The slot number when the next transmission attempt will be made for the packet at the head of the queue.
+        self.total_no_packets = 0
 
         self.server = simpy.Resource(env, capacity = 1)
         self.env = env
@@ -33,7 +33,6 @@ class server_queue:
         self.arrival_rate = arrival_rate
         self.Packet_Delay = Packet_Delay
         self.Server_Idle_Periods = Server_Idle_Periods
-        self.total_no_packets = 0
         self.discards = 0
         
     def process_packet(self, env, packet):
@@ -58,16 +57,13 @@ class server_queue:
               # arrival time of one packet
 
             self.total_no_packets += 1
-            if self.queue_len < B:
-                self.packet_number += 1
-                  # packet id
-                arrival_time = env.now  
-                #print(self.num_pkt_total, "packet arrival")
-                new_packet = Packet(self.packet_number,arrival_time)
-                self.queue_len += 1
-                env.process(self.process_packet(env, new_packet))
-            else:
-                self.discards += 1
+            self.packet_number += 1
+              # packet id
+            arrival_time = env.now  
+            #print(self.num_pkt_total, "packet arrival")
+            new_packet = Packet(self.packet_number,arrival_time)
+            self.queue_len += 1
+            env.process(self.process_packet(env, new_packet))
             
     
 
@@ -84,38 +80,8 @@ class StatObject:
 
     def addNumber(self,x):
         self.dataset.append(x)
-    def sum(self):
-        n = len(self.dataset)
-        sum = 0
-        for i in self.dataset:
-            sum = sum + i
-        return sum
-    def mean(self):
-        n = len(self.dataset)
-        sum = 0
-        for i in self.dataset:
-            sum = sum + i
-        return sum/n
-    def maximum(self):
-        return max(self.dataset)
-    def minimum(self):
-        return min(self.dataset)
     def count(self):
         return len(self.dataset)
-    def median(self):
-        self.dataset.sort()
-        n = len(self.dataset)
-        if n//2 != 0: # get the middle number
-            return self.dataset[n//2]
-        else: # find the average of the middle two numbers
-            return ((self.dataset[n//2] + self.dataset[n//2 + 1])/2)
-    def standarddeviation(self):
-        temp = self.mean()
-        sum = 0
-        for i in self.dataset:
-            sum = sum + (i - temp)**2
-        sum = sum/(len(self.dataset) - 1)
-        return math.sqrt(sum)
 
 class ethernet_model:
     def __init__(self, env, arrival_rate, Packet_Delay, Server_Idle_Periods):
@@ -124,32 +90,33 @@ class ethernet_model:
         self.Packet_Delay = Packet_Delay
         self.Server_Idle_Periods = Server_Idle_Periods
         self.queues = [server_queue(env, arrival_rate, Packet_Delay, Server_Idle_Periods) for _ in range(10)]
-
-
         
     def runModel(self,env):
         currentSlot = 1
         while True:
             queuesThatWantToSend = []
-            self.currentSlot = self.currentSlot + 1
-            print(self.currentSlot)
-            for currentQueue in range(1,10):
-                if self.queues[currentQueue].queue_len > 0
-                    queuesThatWantToSend.append(currentQueue) #this will tell us which queues want to send
-            if(len(queuesThatWantToSend) > 1):
-                self.exponentionalBackoff(self,env,queuesThatWantToSend)
-            else if(len(queuesThatWantToSend) == 1):
-                self.queues[queuesThatWantToSend[0]].process_packet
+            # print(self.currentSlot)
+            for currentQueue in range(1,10):#check which queues want to send for current slot number
+                if (self.queues[currentQueue].queue_len) == 0
+                    self.queues[currentQueue].currentSlot = self.currentSlot #keep slot numbers current
+                if ((self.queues[currentQueue].queue_len > 0) && (self.queues[currentQueue].slotNum==currentSLot))
+                    queuesThatWantToSend.append(currentQueue) 
 
+            if(len(queuesThatWantToSend) > 1):#if collisions occur
+                self.exponentionalBackoff(self,env,queuesThatWantToSend)
+            else if(len(queuesThatWantToSend) == 1):#otherwise
+                self.queues[queuesThatWantToSend[0]].process_packet
+                self.queues[queuesThatWantToSend[0]].N = 0
+                self.queues[queuesThatWantToSend[0]].slotNum = self.queues[queuesThatWantToSend[0]].slotNum + 1
 
             yield env.timeout(1) # lets say that env.timeout(1) represents 1 second, which is the service time
 
-    def exponentionalBackoff(self,env,queuesThatWantToSend):
+    def exponentionalBackoff(self,env,queuesThatWantToSend):#recalculate slotNum for each queueThatWantToSend
         for currentIndex in range(1,len(queuesThatWantToSend)):
+            k = min(self.queues[queuesThatWantToSend[currentIndex]].N, 10)
+            randVar = random.randint(0,2**k)
+            self.queues[queuesThatWantToSend[currentIndex]].slotNum = self.queues[queuesThatWantToSend[currentIndex]].slotNum + randVar
             self.queues[queuesThatWantToSend[currentIndex]].N = self.queues[queuesThatWantToSend[currentIndex]].N + 1
-            proposedBackoffSlot = random.randrange(currentSlot+1,2**self.queues[queuesThatWantToSend[currentIndex]].N)
-            for currentQueue in range(1,10):
-                self.queues[currentQueue]. 
 
 
 

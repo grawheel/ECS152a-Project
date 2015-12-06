@@ -21,7 +21,6 @@ class server_queue:
             #the head of the queue n is reset to 0.
         self.slotNum = 1 #The slot number when the next transmission attempt will be made for the packet at the head of the queue.
         self.total_no_packets = 0
-
         self.server = simpy.Resource(env, capacity = 1)
         self.env = env
         self.queue_len = 0
@@ -73,26 +72,28 @@ class StatObject:
         return len(self.dataset)
 
 class ethernet_model:
-    def __init__(self, env, arrival_rate, Packet_Delay, Server_Idle_Periods):
+    def __init__(self, env, arrival_rate, Packet_Delay, Server_Idle_Periods, queues):
         self.currentSlot = 1
         self.env = env
         self.Packet_Delay = Packet_Delay
         self.Server_Idle_Periods = Server_Idle_Periods
-        self.queues = [server_queue(env, arrival_rate, Packet_Delay, Server_Idle_Periods) for _ in range(10)]
-        for i in range(0,9):
-            env.process(self.queues[i].packets_arrival(env))
+        self.queues = queues
+        #for i in range(0,9):
+            #env.process(self.queues[i].packets_arrival(env))
+
+        [self.env.process(self.queues[i].packets_arrival(env)) for i in range(10)]
         
         
     def runModel(self,env):
         while True:
             queuesThatWantToSend = []
-            print(self.currentSlot)
-            for currentQueue in range(1,10):#check which queues want to send for current slot number
+            for currentQueue in range(0,9):#check which queues want to send for current slot number
                 if ((self.queues[currentQueue].queue_len) == 0):
                     self.queues[currentQueue].slotNum = self.currentSlot #keep slot numbers current
                 if ((self.queues[currentQueue].queue_len > 0) and (self.queues[currentQueue].slotNum==self.currentSlot)):
                     queuesThatWantToSend.append(currentQueue) 
 
+            #print(len(queuesThatWantToSend))
             if(len(queuesThatWantToSend) > 1):#if collisions occur
                 self.exponentionalBackoff(env,queuesThatWantToSend)
             elif(len(queuesThatWantToSend) == 1):#otherwise
@@ -103,6 +104,7 @@ class ethernet_model:
 
             yield self.env.timeout(1) # lets say that env.timeout(1) represents 1 second, which is the service time
             self.currentSlot = self.currentSlot + 1
+            print(self.currentSlot)
 
     def exponentionalBackoff(self,env,queuesThatWantToSend):#recalculate slotNum for each queueThatWantToSend
         for currentIndex in range(1,len(queuesThatWantToSend)):
@@ -121,7 +123,8 @@ def main():
     Packet_Delay = StatObject()
     Server_Idle_Periods = StatObject()
     for arrival_rate in [0.01, 0.02]:
-        router = ethernet_model(env, arrival_rate, Packet_Delay, Server_Idle_Periods)
+        queues = [server_queue(env, arrival_rate, Packet_Delay, Server_Idle_Periods) for _ in range(10)]
+        router = ethernet_model(env, arrival_rate, Packet_Delay, Server_Idle_Periods, queues)
         #env.process(router.packets_arrival(env))
         env.process(router.runModel(env))
         env.run(until=SIM_TIME)

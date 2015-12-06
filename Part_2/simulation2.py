@@ -9,7 +9,6 @@ import math
 RANDOM_SEED = 29
 SIM_TIME = 100000
 MU = 1
-B = 10
 
 
 """ 10-Queue system  """
@@ -34,19 +33,13 @@ class server_queue:
         self.Packet_Delay = Packet_Delay
         self.Server_Idle_Periods = Server_Idle_Periods
         self.discards = 0
+        self.currentPacket = 0
         
     def process_packet(self, env, packet):
-        with self.server.request() as req:
-            start = env.now
-            yield req
-            yield env.timeout(random.expovariate(MU))
-            latency = env.now - packet.arrival_time
-            self.Packet_Delay.addNumber(latency)
-            #print("Packet number {0} with arrival time {1} latency {2}".format(packet.identifier, packet.arrival_time, latency))
-            self.queue_len -= 1
-            if self.queue_len == 0:
-                self.flag_processing = 0
-                self.start_idle_time = env.now
+        #print("Packet number {0} with arrival time {1} latency {2}".format(packet.identifier, packet.arrival_time, latency))
+        self.queue_len -= 1
+        if self.queue_len == 0:
+            self.flag_processing = 0
                 
     def packets_arrival(self, env):
         # packet arrivals 
@@ -58,12 +51,7 @@ class server_queue:
 
             self.total_no_packets += 1
             self.packet_number += 1
-              # packet id
-            arrival_time = env.now  
-            #print(self.num_pkt_total, "packet arrival")
-            new_packet = Packet(self.packet_number,arrival_time)
             self.queue_len += 1
-            env.process(self.process_packet(env, new_packet))
             
     
 
@@ -90,6 +78,8 @@ class ethernet_model:
         self.Packet_Delay = Packet_Delay
         self.Server_Idle_Periods = Server_Idle_Periods
         self.queues = [server_queue(env, arrival_rate, Packet_Delay, Server_Idle_Periods) for _ in range(10)]
+        for i in range(1,10)
+            env.process(queues[i].packets_arrival(env))
         
     def runModel(self,env):
         currentSlot = 1
@@ -105,7 +95,8 @@ class ethernet_model:
             if(len(queuesThatWantToSend) > 1):#if collisions occur
                 self.exponentionalBackoff(self,env,queuesThatWantToSend)
             else if(len(queuesThatWantToSend) == 1):#otherwise
-                self.queues[queuesThatWantToSend[0]].process_packet
+                #env.process(self.process_packet(env, new_packet))
+                self.queues[queuesThatWantToSend[0]].process_packet(env)
                 self.queues[queuesThatWantToSend[0]].N = 0
                 self.queues[queuesThatWantToSend[0]].slotNum = self.queues[queuesThatWantToSend[0]].slotNum + 1
 
@@ -117,6 +108,7 @@ class ethernet_model:
             randVar = random.randint(0,2**k)
             self.queues[queuesThatWantToSend[currentIndex]].slotNum = self.queues[queuesThatWantToSend[currentIndex]].slotNum + randVar
             self.queues[queuesThatWantToSend[currentIndex]].N = self.queues[queuesThatWantToSend[currentIndex]].N + 1
+
 
 
 

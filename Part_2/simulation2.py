@@ -17,10 +17,10 @@ B = 10
 
 class server_queue:
     def __init__(self, env, arrival_rate, Packet_Delay, Server_Idle_Periods):
-        L = 0 #The number of packets in the queue.
-        N = 0 #The number of times the packet at the head of the queue has been retransmitted. When a new packet comes to
+        #self.L = 0 #The number of packets in the queue.
+        self.N = 0 #The number of times the packet at the head of the queue has been retransmitted. When a new packet comes to
             #the head of the queue n is reset to 0.
-        S = 0 #The slot number when the next transmission attempt will be made for the packet at the head of the queue.
+        self.slotNum = 0 #The slot number when the next transmission attempt will be made for the packet at the head of the queue.
     
 
         self.server = simpy.Resource(env, capacity = 1)
@@ -64,11 +64,6 @@ class server_queue:
                 arrival_time = env.now  
                 #print(self.num_pkt_total, "packet arrival")
                 new_packet = Packet(self.packet_number,arrival_time)
-                if self.flag_processing == 0:
-                    self.flag_processing = 1
-                    idle_period = env.now - self.start_idle_time
-                    self.Server_Idle_Periods.addNumber(idle_period)
-                #print("Idle period of length {0} ended".format(idle_period))
                 self.queue_len += 1
                 env.process(self.process_packet(env, new_packet))
             else:
@@ -135,9 +130,28 @@ class ethernet_model:
     def runModel(self,env):
         currentSlot = 1
         while True:
+            queuesThatWantToSend = []
             self.currentSlot = self.currentSlot + 1
             print(self.currentSlot)
+            for currentQueue in range(1,10):
+                if self.queues[currentQueue].queue_len > 0
+                    queuesThatWantToSend.append(currentQueue) #this will tell us which queues want to send
+            if(len(queuesThatWantToSend) > 1):
+                self.exponentionalBackoff(self,env,queuesThatWantToSend)
+            else if(len(queuesThatWantToSend) == 1):
+                self.queues[queuesThatWantToSend[0]].process_packet
+
+
             yield env.timeout(1) # lets say that env.timeout(1) represents 1 second, which is the service time
+
+    def exponentionalBackoff(self,env,queuesThatWantToSend):
+        for currentIndex in range(1,len(queuesThatWantToSend)):
+            self.queues[queuesThatWantToSend[currentIndex]].N = self.queues[queuesThatWantToSend[currentIndex]].N + 1
+            proposedBackoffSlot = random.randrange(currentSlot+1,2**self.queues[queuesThatWantToSend[currentIndex]].N)
+            for currentQueue in range(1,10):
+                self.queues[currentQueue]. 
+
+
 
 def main():
     print("Binary Exponential Backoff Model with 10 Queues: ")
